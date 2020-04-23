@@ -72,7 +72,7 @@ class StageWorld():
                 or self.speed_GT is None or self.state_GT is None or self.is_crashed is None:
             pass
 
-
+        
         rospy.sleep(1.)
         # # What function to call when you ctrl + c
         # rospy.on_shutdown(self.shutdown)

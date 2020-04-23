@@ -1,3 +1,4 @@
+# coding=utf-8
 import os
 import logging
 import sys
@@ -45,9 +46,8 @@ def run(comm, env, policy, policy_path, action_bound, optimizer):
     if env.index == 0:
         env.reset_world()
 
-
     for id in range(MAX_EPISODES):
-        env.reset_pose()
+        # env.reset_pose()
 
         env.generate_goal_point()
         group_terminal = False
@@ -70,11 +70,14 @@ def run(comm, env, policy, policy_path, action_bound, optimizer):
             # execute actions
             real_action = comm.scatter(scaled_action, root=0)
             if liveflag == True:
+                # print(real_action)
                 env.control_vel(real_action)
                 # rate.sleep()
                 rospy.sleep(0.001)
                 # get informtion
                 r, terminal, result = env.get_reward_and_terminate(step)
+                print('r: ', r)
+                # r, terminal, result = 1,0,1 #env.get_reward_and_terminate(step)
                 step += 1
 
 
@@ -114,10 +117,10 @@ def run(comm, env, policy, policy_path, action_bound, optimizer):
                     t_batch, advs_batch = generate_train_data(rewards=r_batch, gamma=GAMMA, values=v_batch,
                                                               last_value=last_v, dones=d_batch, lam=LAMDA)
                     memory = (s_batch, goal_batch, speed_batch, a_batch, l_batch, t_batch, v_batch, r_batch, advs_batch)
-                    ppo_update_stage2(policy=policy, optimizer=optimizer, batch_size=BATCH_SIZE, memory=memory, filter_index=filter_index,
-                                            epoch=EPOCH, coeff_entropy=COEFF_ENTROPY, clip_value=CLIP_VALUE, num_step=HORIZON,
-                                            num_env=NUM_ENV, frames=LASER_HIST,
-                                            obs_size=OBS_SIZE, act_size=ACT_SIZE)
+                    # ppo_update_stage2(policy=policy, optimizer=optimizer, batch_size=BATCH_SIZE, memory=memory, filter_index=filter_index,
+                                            # epoch=EPOCH, coeff_entropy=COEFF_ENTROPY, clip_value=CLIP_VALUE, num_step=HORIZON,
+                                            # num_env=NUM_ENV, frames=LASER_HIST,
+                                            # obs_size=OBS_SIZE, act_size=ACT_SIZE)
 
                     buff = []
                     global_update += 1
@@ -127,11 +130,11 @@ def run(comm, env, policy, policy_path, action_bound, optimizer):
 
 
 
-        if env.index == 0:
-            if global_update != 0 and global_update % 20 == 0:
-                torch.save(policy.state_dict(), policy_path + '/stage2_{}.pth'.format(global_update))
-                logger.info('########################## model saved when update {} times#########'
-                            '################'.format(global_update))
+        # if env.index == 0:
+        #     if global_update != 0 and global_update % 20 == 0:
+        #         torch.save(policy.state_dict(), policy_path + '/stage2_{}.pth'.format(global_update))
+        #         logger.info('########################## model saved when update {} times#########'
+        #                     '################'.format(global_update))
 
         logger.info('Env %02d, Goal (%05.1f, %05.1f), Episode %05d, setp %03d, Reward %-5.1f, %s,' % \
                     (env.index, env.goal_point[0], env.goal_point[1], id, step-1, ep_reward, result))
@@ -173,7 +176,7 @@ if __name__ == '__main__':
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
-
+    
     env = StageWorld(512, index=rank, num_env=NUM_ENV)
     reward = None
     action_bound = [[0, -1], [1, 1]]
@@ -193,6 +196,7 @@ if __name__ == '__main__':
 
         file = policy_path + '/stage2.pth'
         if os.path.exists(file):
+        # if False:
             logger.info('####################################')
             logger.info('############Loading Model###########')
             logger.info('####################################')

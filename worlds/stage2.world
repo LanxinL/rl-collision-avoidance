@@ -51,7 +51,7 @@ floorplan
 
 window
 (
-  size [1550 1550]
+  size [700 700]
   
 # Camera options 
   scale 35          

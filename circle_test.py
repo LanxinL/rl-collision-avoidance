@@ -15,7 +15,6 @@ from model.ppo import generate_action_no_sampling, transform_buffer
 
 
 
-
 MAX_EPISODES = 5000
 LASER_BEAM = 512
 LASER_HIST = 3
@@ -26,7 +25,7 @@ BATCH_SIZE = 512
 EPOCH = 3
 COEFF_ENTROPY = 5e-4
 CLIP_VALUE = 0.1
-NUM_ENV = 50
+NUM_ENV = 1 #50
 OBS_SIZE = 512
 ACT_SIZE = 2
 LEARNING_RATE = 5e-5
@@ -63,6 +62,7 @@ def enjoy(comm, env, policy, action_bound):
         real_action = comm.scatter(scaled_action, root=0)
         if terminal == True:
             real_action[0] = 0
+        print(real_action)
         env.control_vel(real_action)
         # rate.sleep()
         rospy.sleep(0.001)

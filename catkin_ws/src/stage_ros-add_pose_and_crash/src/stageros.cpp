@@ -647,6 +647,7 @@ StageNode::WorldCallback()
                     image_msg.header.frame_id = mapName("camera", r,static_cast<Stg::Model*>(robotmodel->positionmodel));
                 image_msg.header.stamp = sim_time;
 
+                std::cout << "publish image \n" ;
                 robotmodel->image_pubs[s].publish(image_msg);
             }
 

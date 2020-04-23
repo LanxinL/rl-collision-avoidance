@@ -1,3 +1,4 @@
+# coding=utf-8
 import time
 import rospy
 import copy
@@ -11,6 +12,7 @@ from rosgraph_msgs.msg import Clock
 from std_srvs.srv import Empty
 from std_msgs.msg import Int8
 from model.utils import get_init_pose, get_goal_point
+from kobuki_msgs.msg import BumperEvent
 
 
 class StageWorld():
@@ -37,25 +39,48 @@ class StageWorld():
         self.goal_value = 0.
 
 
-        # -----------Publisher and Subscriber-------------
-        cmd_vel_topic = 'robot_' + str(index) + '/cmd_vel'
+        # # -----------Publisher and Subscriber-------------
+        # cmd_vel_topic = 'robot_' + str(index) + '/cmd_vel'
+        # self.cmd_vel = rospy.Publisher(cmd_vel_topic, Twist, queue_size=10)
+
+        # cmd_pose_topic = 'robot_' + str(index) + '/cmd_pose'
+        # self.cmd_pose = rospy.Publisher(cmd_pose_topic, Pose, queue_size=10)
+
+        # object_state_topic = 'robot_' + str(index) + '/base_pose_ground_truth'
+        # self.object_state_sub = rospy.Subscriber(object_state_topic, Odometry, self.ground_truth_callback)
+
+        # laser_topic = 'robot_' + str(index) + '/base_scan'
+
+        # self.laser_sub = rospy.Subscriber(laser_topic, LaserScan, self.laser_scan_callback)
+
+        # odom_topic = 'robot_' + str(index) + '/odom'
+        # self.odom_sub = rospy.Subscriber(odom_topic, Odometry, self.odometry_callback)
+
+        # crash_topic = 'robot_' + str(index) + '/is_crashed'
+        # self.check_crash = rospy.Subscriber(crash_topic, Int8, self.crash_callback)
+
+
+        # self.sim_clock = rospy.Subscriber('clock', Clock, self.sim_clock_callback)
+
+        # -----------Publisher and Subscriber 2-------------
+        cmd_vel_topic = "/mobile_base/commands/velocity"
         self.cmd_vel = rospy.Publisher(cmd_vel_topic, Twist, queue_size=10)
 
-        cmd_pose_topic = 'robot_' + str(index) + '/cmd_pose'
-        self.cmd_pose = rospy.Publisher(cmd_pose_topic, Pose, queue_size=10)
+        # cmd_pose_topic = 'robot_' + str(index) + '/cmd_pose' # @llx 用于 reset pose
+        # self.cmd_pose = rospy.Publisher(cmd_pose_topic, Pose, queue_size=10)
 
-        object_state_topic = 'robot_' + str(index) + '/base_pose_ground_truth'
+        object_state_topic = "/odom"
         self.object_state_sub = rospy.Subscriber(object_state_topic, Odometry, self.ground_truth_callback)
 
-        laser_topic = 'robot_' + str(index) + '/base_scan'
+        laser_topic = '/scan'
 
         self.laser_sub = rospy.Subscriber(laser_topic, LaserScan, self.laser_scan_callback)
 
-        odom_topic = 'robot_' + str(index) + '/odom'
+        odom_topic = "/odom"
         self.odom_sub = rospy.Subscriber(odom_topic, Odometry, self.odometry_callback)
 
-        crash_topic = 'robot_' + str(index) + '/is_crashed'
-        self.check_crash = rospy.Subscriber(crash_topic, Int8, self.crash_callback)
+        crash_topic = '/mobile_base/events/bumper'
+        self.check_crash = rospy.Subscriber(crash_topic, BumperEvent, self.crash_callback)
 
 
         self.sim_clock = rospy.Subscriber('clock', Clock, self.sim_clock_callback)
@@ -69,9 +94,9 @@ class StageWorld():
         self.speed_GT = None
         self.state_GT = None
         self.is_crashed = None
-        while self.scan is None or self.speed is None or self.state is None\
-                or self.speed_GT is None or self.state_GT is None or self.is_crashed is None:
-            pass
+        # while self.scan is None or self.speed is None or self.state is None\
+        #         or self.speed_GT is None or self.state_GT is None or self.is_crashed is None:
+        #     pass
 
         rospy.sleep(1.)
         # # What function to call when you ctrl + c
@@ -146,14 +171,15 @@ class StageWorld():
         return self.sim_time
 
     def get_local_goal(self):
-        [x, y, theta] = self.get_self_stateGT()
-        [goal_x, goal_y] = self.goal_point
-        local_x = (goal_x - x) * np.cos(theta) + (goal_y - y) * np.sin(theta)
-        local_y = -(goal_x - x) * np.sin(theta) + (goal_y - y) * np.cos(theta)
-        return [local_x, local_y]
+        # [x, y, theta] = self.get_self_stateGT()
+        # [goal_x, goal_y] = self.goal_point
+        # local_x = (goal_x - x) * np.cos(theta) + (goal_y - y) * np.sin(theta)
+        # local_y = -(goal_x - x) * np.sin(theta) + (goal_y - y) * np.cos(theta)
+        # return [local_x, local_y]
+        return (40,-1) 
 
     def reset_world(self):
-        self.reset_stage()
+        # self.reset_stage()
         self.self_speed = [0.0, 0.0]
         self.step_goal = [0., 0.]
         self.step_r_cnt = 0.
@@ -229,6 +255,7 @@ class StageWorld():
         move_cmd.angular.x = 0.
         move_cmd.angular.y = 0.
         move_cmd.angular.z = action[1]
+        # print(move_cmd)
         self.cmd_vel.publish(move_cmd)
 
 
@@ -244,7 +271,7 @@ class StageWorld():
         pose_cmd.orientation.y = qtn[1]
         pose_cmd.orientation.z = qtn[2]
         pose_cmd.orientation.w = qtn[3]
-        self.cmd_pose.publish(pose_cmd)
+        # self.cmd_pose.publish(pose_cmd)
 
 
     def generate_random_pose(self):
