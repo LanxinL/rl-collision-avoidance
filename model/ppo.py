@@ -256,7 +256,7 @@ def ppo_update_stage2(policy, optimizer, batch_size, memory, filter_index, epoch
 
 
 
-    print('filter {} transitions; update'.format(len(filter_index)))
+    # print('filter {} transitions; update'.format(len(filter_index)))
 
 
 

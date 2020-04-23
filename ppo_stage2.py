@@ -48,6 +48,8 @@ def run(comm, env, policy, policy_path, action_bound, optimizer):
 
     for id in range(MAX_EPISODES):
         # env.reset_pose()
+        # env.reset_pose()
+        # env.pause_env()
 
         env.generate_goal_point()
         group_terminal = False
@@ -195,8 +197,8 @@ if __name__ == '__main__':
             os.makedirs(policy_path)
 
         file = policy_path + '/stage2.pth'
-        if os.path.exists(file):
-        # if False:
+        # if os.path.exists(file):
+        if False:
             logger.info('####################################')
             logger.info('############Loading Model###########')
             logger.info('####################################')

@@ -66,8 +66,8 @@ class StageWorld():
         cmd_vel_topic = "/mobile_base/commands/velocity"
         self.cmd_vel = rospy.Publisher(cmd_vel_topic, Twist, queue_size=10)
 
-        # cmd_pose_topic = 'robot_' + str(index) + '/cmd_pose' # @llx 用于 reset pose
-        # self.cmd_pose = rospy.Publisher(cmd_pose_topic, Pose, queue_size=10)
+        cmd_pose_topic = 'robot_' + str(index) + '/cmd_pose' # @llx 用于 reset pose
+        self.cmd_pose = rospy.Publisher(cmd_pose_topic, Pose, queue_size=10)
 
         object_state_topic = "/odom"
         self.object_state_sub = rospy.Subscriber(object_state_topic, Odometry, self.ground_truth_callback)
@@ -86,7 +86,8 @@ class StageWorld():
         self.sim_clock = rospy.Subscriber('clock', Clock, self.sim_clock_callback)
 
         # -----------Service-------------------
-        self.reset_stage = rospy.ServiceProxy('reset_positions', Empty)
+        # self.reset_stage = rospy.ServiceProxy('reset_positions', Empty)
+        self.reset_stage = rospy.ServiceProxy('/gazebo/reset_world', Empty)
 
         # # Wait until the first callback
         self.speed = None
@@ -179,7 +180,7 @@ class StageWorld():
         return (40,-1) 
 
     def reset_world(self):
-        # self.reset_stage()
+        self.reset_stage()
         self.self_speed = [0.0, 0.0]
         self.step_goal = [0., 0.]
         self.step_r_cnt = 0.
@@ -234,6 +235,7 @@ class StageWorld():
         return reward, terminate, result
 
     def reset_pose(self):
+        # import pdb; pdb.set_trace()
         if self.index > 33 and self.index < 44:
             reset_pose = self.generate_random_pose()
         else:
@@ -243,8 +245,9 @@ class StageWorld():
         [x_robot, y_robot, theta] = self.get_self_stateGT()
 
         while np.abs(reset_pose[0] - x_robot) > 0.2 or np.abs(reset_pose[1] - y_robot) > 0.2:
+            print(2)
             [x_robot, y_robot, theta] = self.get_self_stateGT()
-        rospy.sleep(0.05)
+        # rospy.sleep(0.05)
 
 
     def control_vel(self, action):
@@ -271,7 +274,7 @@ class StageWorld():
         pose_cmd.orientation.y = qtn[1]
         pose_cmd.orientation.z = qtn[2]
         pose_cmd.orientation.w = qtn[3]
-        # self.cmd_pose.publish(pose_cmd)
+        self.cmd_pose.publish(pose_cmd)
 
 
     def generate_random_pose(self):
