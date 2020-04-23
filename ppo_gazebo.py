@@ -182,8 +182,9 @@ if __name__ == '__main__':
     env = StageWorld(512, index=rank, num_env=NUM_ENV)
     reward = None
     action_bound = [[0, -1], [1, 1]]
-    # torch.manual_seed(1)
-    # np.random.seed(1)
+    
+    torch.manual_seed(1)
+    np.random.seed(1)
 
     if rank == 0:
         policy_path = 'policy'
