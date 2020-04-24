@@ -203,13 +203,15 @@ class StageWorld():
         self.unpause_stage()
 
     def generate_goal_point(self):
-        if self.index > 33 and self.index < 44:
-            self.goal_point = self.generate_random_goal()
-        else:
-            self.goal_point = get_goal_point(self.index)
+        # if self.index > 33 and self.index < 44:
+        #     self.goal_point = self.generate_random_goal()
+        # else:
+        #     self.goal_point = get_goal_point(self.index)
+        
+        self.goal_point = (40,-1)
 
         self.pre_distance = 0
-        self.distance = copy.deepcopy(self.pre_distance)
+        self.distance = copy.deepcopy(self.pre_distance) # @llx why
 
 
 
@@ -218,9 +220,12 @@ class StageWorld():
         laser_scan = self.get_laser_observation()
         laser_min = np.amin(laser_scan)
         [x, y, theta] = self.get_self_stateGT()
+        print('position: ', x, y)
+        print('goal: ', self.goal_point)
         [v, w] = self.get_self_speedGT()
         self.pre_distance = copy.deepcopy(self.distance)
         self.distance = np.sqrt((self.goal_point[0] - x) ** 2 + (self.goal_point[1] - y) ** 2)
+        print('distance:', self.distance)
         reward_g = (self.pre_distance - self.distance) * 2.5
         reward_c = 0
         reward_w = 0
@@ -238,6 +243,7 @@ class StageWorld():
         print('reward_g: ', reward_g)
 
         if is_crash == 1:
+            print('is_crash: ', is_crash)
             terminate = True
             reward_c = -15.
             result = 'Crashed'
