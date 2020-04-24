@@ -4,7 +4,8 @@ conda activate cadrl
 
 killall -9 roscore
 killall -9 rosmaster
-
+killall -9 roslaunch
+killall -9 gzserver
 {
 PIDS[1]=$!;
 roslaunch menge_gazebo_worlds turtlebot.launch > turtlebot.log

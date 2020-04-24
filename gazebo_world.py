@@ -92,7 +92,7 @@ class StageWorld():
         self.pause_stage = rospy.ServiceProxy('/gazebo/pause_physics', Empty)
         self.unpause_stage = rospy.ServiceProxy('/gazebo/unpause_physics', Empty)
         self.reset_stage = rospy.ServiceProxy('/gazebo/reset_world', Empty)
-        # self.get_model_states = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
+        self.get_model_states = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
         # import pdb; pdb.set_trace()
 
         # # Wait until the first callback
@@ -110,13 +110,18 @@ class StageWorld():
         # rospy.on_shutdown(self.shutdown)
 
     def ground_truth_callback(self, GT_odometry):
-        Quaternious = GT_odometry.pose.pose.orientation
-        Euler = tf.transformations.euler_from_quaternion([Quaternious.x, Quaternious.y, Quaternious.z, Quaternious.w])
-        self.state_GT = [GT_odometry.pose.pose.position.x, GT_odometry.pose.pose.position.y, Euler[2]]
-        v_x = GT_odometry.twist.twist.linear.x
-        v_y = GT_odometry.twist.twist.linear.y
-        v = np.sqrt(v_x**2 + v_y**2)
-        self.speed_GT = [v, GT_odometry.twist.twist.angular.z]
+        # Quaternious = GT_odometry.pose.pose.orientation
+        # Euler = tf.transformations.euler_from_quaternion([Quaternious.x, Quaternious.y, Quaternious.z, Quaternious.w])
+        # self.state_GT = [GT_odometry.pose.pose.position.x, GT_odometry.pose.pose.position.y, Euler[2]]
+        # v_x = GT_odometry.twist.twist.linear.x
+        # v_y = GT_odometry.twist.twist.linear.y
+        # v = np.sqrt(v_x**2 + v_y**2)
+        # self.speed_GT = [v, GT_odometry.twist.twist.angular.z]
+        rob_state = self.get_model_states('mobile_base','')
+        position = rob_state.pose
+        self.state_GT = self.transfer_state(position)
+        twist = rob_state.twist
+        self.speed_GT = self.transfer_v(twist)        
 
     # @llx
     def transfer_state(self, pose):
@@ -241,15 +246,9 @@ class StageWorld():
         laser_min = np.amin(laser_scan)
         [x, y, theta] = self.get_self_stateGT()
         # print('goal: ', self.goal_point)
-        print('x y: ', x,y)
         [v, w] = self.get_self_speedGT()
-        # rob_state = self.get_model_states('mobile_base','')
-        # position = rob_state.pose
-        # print(self.transfer_state(position))
-        # twist = rob_state.twist
-        # print(self.transfer_v(twist))
         # import pdb;pdb.set_trace()
-        
+        print('x y: ', x,y)
         self.pre_distance = copy.deepcopy(self.distance)
         self.distance = np.sqrt((self.goal_point[0] - x) ** 2 + (self.goal_point[1] - y) ** 2)
         print('distance:', self.distance)
