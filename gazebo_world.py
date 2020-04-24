@@ -13,6 +13,8 @@ from std_srvs.srv import Empty
 from std_msgs.msg import Int8
 from model.utils import get_init_pose, get_goal_point
 from kobuki_msgs.msg import BumperEvent
+from gazebo_msgs.msg import ModelStates
+from gazebo_msgs.srv import GetModelState
 
 
 class StageWorld():
@@ -74,14 +76,14 @@ class StageWorld():
         self.object_state_sub = rospy.Subscriber(object_state_topic, Odometry, self.ground_truth_callback)
 
         laser_topic = '/scan'
-
         self.laser_sub = rospy.Subscriber(laser_topic, LaserScan, self.laser_scan_callback)
 
         odom_topic = "/odom"
         self.odom_sub = rospy.Subscriber(odom_topic, Odometry, self.odometry_callback)
 
-        crash_topic = '/mobile_base/events/bumper'
-        self.check_crash = rospy.Subscriber(crash_topic, BumperEvent, self.crash_callback)
+        # 不准，只会检测前侧的碰撞，替换为 scan
+        # crash_topic = '/mobile_base/events/bumper'
+        # self.check_crash = rospy.Subscriber(crash_topic, BumperEvent, self.crash_callback)
 
 
         self.sim_clock = rospy.Subscriber('clock', Clock, self.sim_clock_callback)
@@ -90,6 +92,8 @@ class StageWorld():
         self.pause_stage = rospy.ServiceProxy('/gazebo/pause_physics', Empty)
         self.unpause_stage = rospy.ServiceProxy('/gazebo/unpause_physics', Empty)
         self.reset_stage = rospy.ServiceProxy('/gazebo/reset_world', Empty)
+        # self.get_model_states = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
+        # import pdb; pdb.set_trace()
 
         # # Wait until the first callback
         self.speed = None
@@ -105,7 +109,6 @@ class StageWorld():
         # # What function to call when you ctrl + c
         # rospy.on_shutdown(self.shutdown)
 
-
     def ground_truth_callback(self, GT_odometry):
         Quaternious = GT_odometry.pose.pose.orientation
         Euler = tf.transformations.euler_from_quaternion([Quaternious.x, Quaternious.y, Quaternious.z, Quaternious.w])
@@ -115,12 +118,30 @@ class StageWorld():
         v = np.sqrt(v_x**2 + v_y**2)
         self.speed_GT = [v, GT_odometry.twist.twist.angular.z]
 
+    # @llx
+    def transfer_state(self, pose):
+        Quaternious = pose.orientation
+        Euler = tf.transformations.euler_from_quaternion([Quaternious.x, Quaternious.y, Quaternious.z, Quaternious.w])
+        return [pose.position.x, pose.position.y, Euler[2]]
+
+    # @llx
+    def transfer_v(self, twist):
+        v_x = twist.linear.x
+        v_y = twist.linear.y
+        v = np.sqrt(v_x**2 + v_y**2)
+        return [v, twist.angular.z]
+
     def laser_scan_callback(self, scan):
         # import pdb; pdb.set_trace()
         self.scan_param = [scan.angle_min, scan.angle_max, scan.angle_increment, scan.time_increment,
                            scan.scan_time, scan.range_min, scan.range_max]
         self.scan = np.array(scan.ranges)
         self.laser_cb_num += 1
+
+        # @llx detect collision by scan
+        if min(self.scan)<0.2:
+            print("bumper： ", min(self.scan))
+            self.is_crashed = True
 
 
     def odometry_callback(self, odometry):
@@ -133,8 +154,7 @@ class StageWorld():
         self.sim_time = clock.clock.secs + clock.clock.nsecs / 1000000000.
 
     def crash_callback(self, flag):
-        print("bumper: ", flag.bumper)
-        print("state: ", flag.state)
+        print("bumper, state: ", flag.bumper, flag.state)
         self.is_crashed = flag.state
         # self.is_crashed = ( flag.state == BumperEvent.PRESSED )
 
@@ -220,12 +240,20 @@ class StageWorld():
         laser_scan = self.get_laser_observation()
         laser_min = np.amin(laser_scan)
         [x, y, theta] = self.get_self_stateGT()
-        print('position: ', x, y)
-        print('goal: ', self.goal_point)
+        # print('goal: ', self.goal_point)
+        print('x y: ', x,y)
         [v, w] = self.get_self_speedGT()
+        # rob_state = self.get_model_states('mobile_base','')
+        # position = rob_state.pose
+        # print(self.transfer_state(position))
+        # twist = rob_state.twist
+        # print(self.transfer_v(twist))
+        # import pdb;pdb.set_trace()
+        
         self.pre_distance = copy.deepcopy(self.distance)
         self.distance = np.sqrt((self.goal_point[0] - x) ** 2 + (self.goal_point[1] - y) ** 2)
         print('distance:', self.distance)
+
         reward_g = (self.pre_distance - self.distance) * 2.5
         reward_c = 0
         reward_w = 0
@@ -238,9 +266,8 @@ class StageWorld():
             reward_g = 15
             result = 'Reach Goal'
         else:
-            reward_g = self.pre_distance - self.distance
-            # reward_g = - 2.5 * self.distance
-        print('reward_g: ', reward_g)
+            # reward_g = self.pre_distance - self.distance
+            reward_g = self.distance
 
         if is_crash == 1:
             print('is_crash: ', is_crash)
@@ -256,7 +283,7 @@ class StageWorld():
         # if t > 2000:
         #     terminate = True
         #     result = 'Time out'
-        reward = 2.5 * reward_g + reward_c + -0.1 * reward_w
+        reward = -0.1* reward_g + reward_c + -0.1 * reward_w
 
         return reward, terminate, result
 
