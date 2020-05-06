@@ -39,7 +39,7 @@ class StageWorld():
 
         self.init_pose = None
 
-
+        self.goal_point = [0, 0]
 
         # for get reward and terminate
         self.stop_counter = 0
@@ -169,8 +169,9 @@ class StageWorld():
 
 
     def generate_goal_point(self):
-        [x_g, y_g] = self.generate_random_goal()
-        self.goal_point = [x_g, y_g]
+        # [x_g, y_g] = self.generate_random_goal()
+        # self.goal_point = [x_g, y_g]
+        self.init_pose = self.get_self_stateGT()
         [x, y] = self.get_local_goal()
 
         self.pre_distance = np.sqrt(x ** 2 + y ** 2)

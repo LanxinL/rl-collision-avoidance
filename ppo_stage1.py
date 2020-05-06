@@ -29,7 +29,7 @@ BATCH_SIZE = 1024
 EPOCH = 2
 COEFF_ENTROPY = 5e-4
 CLIP_VALUE = 0.1
-NUM_ENV = 24
+NUM_ENV = 1
 OBS_SIZE = 512
 ACT_SIZE = 2
 LEARNING_RATE = 5e-5
@@ -183,7 +183,8 @@ if __name__ == '__main__':
             os.makedirs(policy_path)
 
         file = policy_path + '/stage1_2.pth'
-        if os.path.exists(file):
+        # if os.path.exists(file):
+        if False:
             logger.info('####################################')
             logger.info('############Loading Model###########')
             logger.info('####################################')

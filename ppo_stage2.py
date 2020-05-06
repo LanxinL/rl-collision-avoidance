@@ -173,7 +173,7 @@ if __name__ == '__main__':
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
-
+    print(rank)
     env = StageWorld(512, index=rank, num_env=NUM_ENV)
     reward = None
     action_bound = [[0, -1], [1, 1]]
@@ -192,7 +192,8 @@ if __name__ == '__main__':
             os.makedirs(policy_path)
 
         file = policy_path + '/stage2.pth'
-        if os.path.exists(file):
+        #if os.path.exists(file):
+        if False:
             logger.info('####################################')
             logger.info('############Loading Model###########')
             logger.info('####################################')

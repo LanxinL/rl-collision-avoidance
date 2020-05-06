@@ -2,4 +2,6 @@
 .idea
 model/__pycache__/*
 model/*.pyc
-
+*/log
+**/log
+**/policy
